@@ -17,6 +17,11 @@
       "email": "timoxa17@gmail.com"
     }
   ],
+  "autoload": {
+    "psr-4": {
+      "MrTimofey\\EloquentSluggable\\": "src/"
+    }
+  },
   "require": {
     "php": ">=7.1.0",
     "illuminate/database": "5.*"
