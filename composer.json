@@ -1,0 +1,24 @@
+{
+  "name": "mr-timofey/eloquent-sluggable",
+  "description": "Sluggable Eloquent model class",
+  "tags": [
+    "slug",
+    "eloquent",
+    "orm",
+    "model",
+    "laravel",
+    "url"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Timofey",
+      "email": "timoxa17@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.0",
+    "illuminate/database": "5.*"
+  }
+}
