@@ -1,15 +1,15 @@
-Sluggable Eloquent model class.
-
-## Requirements
-
-* PHP 7.1
-* Eloquent models
+Slugs for Eloquent models.
 
 ## Features
 
 * `findBySlug`, `findBySlugOrFail`, `findByAny`, `findByAnyOrFail`
 * Automatic unique slug generation on create (if not set manually)
 * Both slug or ID route resolving (ID field should be integer)
+
+## Requirements
+
+* PHP 7.1
+* Eloquent models
 
 ## Install
 
@@ -26,7 +26,7 @@ class MyModel extends \Illuminate\Database\Eloquent\Model {
 	use \MrTimofey\EloquentSluggable\Sluggable;
 
 	/**
-	 * @var string attribute name that can be a source to generate slug
+	 * @var string attribute name that used as a source to automatically generate slug
 	 */
 	protected static $slugSource = 'name';
 
