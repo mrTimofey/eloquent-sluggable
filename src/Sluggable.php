@@ -5,23 +5,14 @@ namespace MrTimofey\EloquentSluggable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @mixin Model
+ * @property-read string $slugSource static attribute name that can be a source to generate slug
+ * @property-read string $slugField static attribute name containing a slug
+ * @property-read string $slugNullable static slug can be null
+ */
 trait Sluggable
 {
-    /**
-     * @var string attribute name that can be a source to generate slug
-     */
-    // protected static $slugSource = 'name';
-
-    /**
-     * @var string attribute name containing a slug
-     */
-    // protected static $slugField = 'slug';
-
-    /**
-     * @var bool slug can be null
-     */
-    // protected static $slugNullable = false;
-
     /**
      * @var bool is already slugified (prevent double slug generation)
      */
