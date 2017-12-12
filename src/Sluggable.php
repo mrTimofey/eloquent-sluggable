@@ -27,12 +27,12 @@ trait Sluggable
      */
     protected $slugified = false;
 
-    protected static function slugSource(): string
+    protected static function getSlugSourceName(): string
     {
         return static::$slugSource ?? 'name';
     }
 
-    protected static function slugField(): string
+    protected static function getSlugName(): string
     {
         return static::$slugField ?? 'slug';
     }
@@ -42,14 +42,53 @@ trait Sluggable
         return !empty(static::$slugNullable);
     }
 
+    protected static function strToSlug(string $source): string
+    {
+        return str_slug($source);
+    }
+
+    protected function isSlugUnique(string $slug): bool
+    {
+        $q = $this->newQueryWithoutScopes()->where(static::getSlugName(), $slug);
+
+        // exclude item itself from checking
+        if ($this->exists) {
+            $q->where($this->getKeyName(), '!=', $this->getKey());
+        }
+        return !$q->exists();
+    }
+
+    public function getSlugSource(): ?string
+    {
+        $v = $this->attributes[static::getSlugSourceName()] ?? null;
+        if ($v === null) {
+            return null;
+        }
+        return (string)$v;
+    }
+
+    public function getSlug(): ?string
+    {
+        $v = $this->attributes[static::getSlugName()] ?? null;
+        if ($v === null) {
+            return null;
+        }
+        return (string)$v;
+    }
+
+    public function setSlug(string $value): void
+    {
+        $this->attributes[static::getSlugName()] = $value;
+        $this->slugified = true;
+    }
+
     /**
      * Generate unique slug value.
      * @return string|null
      */
     public function generateSlug(): ?string
     {
-        $slug = $this->attributes[static::slugField()] ?? null;
-        $slug = $slug ?: ($this->attributes[static::slugSource()] ?? null);
+        $slug = $this->getSlug() ?: $this->getSlugSource();
 
         if ($slug === null) {
             if (static::slugNullable()) {
@@ -59,38 +98,18 @@ trait Sluggable
         }
 
         // process slug value or generate it from source
-        $slug = str_slug($slug);
+        $slug = static::strToSlug($slug);
 
         // check unique
         $original = $slug;
         $num = 0;
-        while (true) {
-            $q = $this->newQueryWithoutScopes()->where(static::slugField(), $slug);
 
-            // exclude item itself from checking
-            if ($this->exists) {
-                $q->where($this->getKeyName(), '!=', $this->getKey());
-            }
-            if (!$q->exists()) {
-                break;
-            }
-
-            // append next number to slug (until slug becomes unique)
+        while (!$this->isSlugUnique($slug)) {
+            // append next number to slug until slug becomes unique
             $slug = $original . '-' . (++$num);
         }
 
         return $slug;
-    }
-
-    /**
-     * Generate slug value and update slug attribute.
-     * @return self $this
-     */
-    public function slugify(): self
-    {
-        $this->attributes[static::slugField()] = $this->generateSlug();
-        $this->slugified = true;
-        return $this;
     }
 
     /**
@@ -100,7 +119,7 @@ trait Sluggable
      */
     public static function findBySlug($slug): ?self
     {
-        return static::query()->where(static::slugField(), $slug)->limit(1)->first();
+        return static::query()->where(static::getSlugName(), $slug)->limit(1)->first();
     }
 
     /**
@@ -156,7 +175,7 @@ trait Sluggable
      */
     public function getRouteKeyName(): string
     {
-        return static::slugField();
+        return static::getSlugName();
     }
 
     /**
@@ -175,7 +194,7 @@ trait Sluggable
      */
     public function slugUniqueValidationRule(): string
     {
-        return 'unique:' . $this->getTable() . ',' . static::slugField() .
+        return 'unique:' . $this->getTable() . ',' . static::getSlugName() .
             ($this->exists ? (',' . $this->getKey() . ',' . $this->getKeyName()) : '');
     }
 
@@ -187,11 +206,9 @@ trait Sluggable
     {
         // generate slug automatically after saving
         static::saving(function (self $item) {
-            // skip existing items with already set slug
-            if ($item->slugified || ($item->exists && !$item->isDirty(static::slugField()))) {
-                return;
+            if (!$item->slugified && !$item->getSlug()) {
+                $item->setSlug($item->generateSlug());
             }
-            $item->slugify();
         });
     }
 }
