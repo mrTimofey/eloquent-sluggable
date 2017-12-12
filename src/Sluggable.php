@@ -179,10 +179,12 @@ trait Sluggable
             ($this->exists ? (',' . $this->getKey() . ',' . $this->getKeyName()) : '');
     }
 
-    public static function boot(): void
+    /**
+     * Boot hook for this trait.
+     * @see Model::bootTraits
+     */
+    public static function bootSluggable(): void
     {
-        parent::boot();
-
         // generate slug automatically after saving
         static::saving(function (self $item) {
             // skip existing items with already set slug
