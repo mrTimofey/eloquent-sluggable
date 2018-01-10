@@ -3,8 +3,11 @@ Slugs for Eloquent models.
 ## Features
 
 * `findBySlug`, `findBySlugOrFail`, `findByAny`, `findByAnyOrFail`
-* Automatic unique slug generation on create (if not set manually)
-* Both slug or ID route resolving (ID field should be integer)
+* Automatic slug generation on create (if not set manually) by transliterating source attribute
+* Automatic unique constraint check after any slug modification on each saving
+	(slug will be appended with -1/2/3/... until becomes unique)
+* Both slug or ID route resolving (assuming ID field is integer)
+* Almost anything can be customized by method overriding or class fields
 
 ## Requirements
 
@@ -26,12 +29,12 @@ class MyModel extends \Illuminate\Database\Eloquent\Model {
 	use \MrTimofey\EloquentSluggable\Sluggable;
 
 	/**
-	 * @var string attribute name that used as a source to automatically generate slug
+	 * @var string attribute name that used as a source for transliteration
 	 */
 	protected static $slugSource = 'name';
 
 	/**
-	 * @var string attribute name containing a slug
+	 * @var string attribute name containing a slug itself
 	 */
 	protected static $slugField = 'slug';
 
@@ -41,3 +44,5 @@ class MyModel extends \Illuminate\Database\Eloquent\Model {
 	protected static $slugNullable = false;
 }
 ```
+
+See trait source code if you need more customizations.
