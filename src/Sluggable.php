@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @mixin Model
  * @property-read string $slugSource static attribute name that can be a source to generate slug
  * @property-read string $slugField static attribute name containing a slug
  * @property-read string $slugNullable static slug can be null
@@ -28,16 +27,26 @@ trait Sluggable
         return static::$slugField ?? 'slug';
     }
 
+    /**
+     * If slug is nullable and both slug and slug source fields are null
+     * than slug is not generated and remains null.
+     * @return bool
+     */
     protected static function slugNullable(): bool
     {
         return !empty(static::$slugNullable);
     }
 
-    protected static function strToSlug(string $source): string
+    protected function strToSlug(string $source): string
     {
         return str_slug($source);
     }
 
+    /**
+     * Check argument to be a unique slug.
+     * @param string $slug
+     * @return bool
+     */
     protected function isSlugUnique(string $slug): bool
     {
         $q = $this->newQueryWithoutScopes()->where(static::getSlugName(), $slug);
@@ -49,25 +58,31 @@ trait Sluggable
         return !$q->exists();
     }
 
+    /**
+     * Suggest a new different slug variation after unique check was failed.
+     * @param string $original original non-unique slug
+     * @param int $iterationNum current unique checking iteration (1+)
+     * @param string $previousSlug previous suggested slug variant
+     * @return string
+     */
+    protected function suggestUniqueSlug(string $original, int $iterationNum, string $previousSlug): string
+    {
+        return $original . '-' . $iterationNum;
+    }
+
     public function getSlugSource(): ?string
     {
         $v = $this->attributes[static::getSlugSourceName()] ?? null;
-        if ($v === null) {
-            return null;
-        }
-        return (string)$v;
+        return $v === null ? null : (string)$v;
     }
 
     public function getSlug(): ?string
     {
         $v = $this->attributes[static::getSlugName()] ?? null;
-        if ($v === null) {
-            return null;
-        }
-        return (string)$v;
+        return $v === null ? null : (string)$v;
     }
 
-    public function setSlug(string $value): void
+    public function setSlug(?string $value): void
     {
         $this->attributes[static::getSlugName()] = $value;
         $this->slugified = true;
@@ -85,19 +100,19 @@ trait Sluggable
             if (static::slugNullable()) {
                 return null;
             }
-            return $this->getKey() ?: str_random();
+            $slug = $this->getKey() ?: str_random();
         }
 
         // process slug value or generate it from source
-        $slug = static::strToSlug($slug);
+        $slug = $this->strToSlug($slug);
 
         // check unique
         $original = $slug;
         $num = 0;
 
         while (!$this->isSlugUnique($slug)) {
-            // append next number to slug until slug becomes unique
-            $slug = $original . '-' . (++$num);
+            // transform slug until it becomes unique
+            $slug = $this->suggestUniqueSlug($original, ++$num, $slug);
         }
 
         return $slug;
@@ -197,7 +212,7 @@ trait Sluggable
     {
         // generate slug automatically after saving
         static::saving(function (self $item) {
-            if (!$item->slugified && !$item->getSlug()) {
+            if (!$item->slugified && (!$item->getSlug() || $item->isDirty(static::getSlugName()))) {
                 $item->setSlug($item->generateSlug());
             }
         });
