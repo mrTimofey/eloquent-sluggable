@@ -211,7 +211,8 @@ trait Sluggable
     public static function bootSluggable(): void
     {
         // generate slug automatically after saving
-        static::saving(function (self $item) {
+        static::saving(function ($item) {
+            /** @var self $item */
             if (!$item->slugified && (!$item->getSlug() || $item->isDirty(static::getSlugName()))) {
                 $item->setSlug($item->generateSlug());
             }
